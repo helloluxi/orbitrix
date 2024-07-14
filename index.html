@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbitrix</title>
+    <style>
+        .dashline { stroke-dasharray: 5, 5; stroke: black; fill: none; }
+        .draggable { cursor: grab; }
+        #debug { font-size: 24px; color: green; }
+        #mini-viewbox { border: 1px solid black;  }
+        #control-panel { margin-bottom: 10px; }
+        .level { color: orange; cursor: pointer; display: inline-block; margin: 0 5px; }
+        .level.won { color: green; }
+        #main-viewbox { display: block; border: 1px solid black; margin: auto; }
+        body { font-size: 18px;}
+    </style>
+</head>
+<body>
+
+<div>Level Selection: 
+    <span class="level" data-level="1">1</span>
+    <span class="level" data-level="2">2</span>
+    <span class="level" data-level="3">3</span>
+    (More incoming...)
+</div>
+<div>Target:</div>
+<svg id="mini-viewbox" width="240" height="180" viewBox="-480 -360 960 720"></svg>
+<div id="control-panel">
+    <button id="restart-button">Scramble</button>
+    <button id="solve-button">Solve</button>
+</div>
+<div id="debug"></div>
+<div>
+    <svg id="main-viewbox" width="960" height="720" viewBox="-480 -360 960 720"></svg>
+</div>
+
+<svg id="svg-loader">
+    <path id="lens-6" d="M7.2,50.98c4.25-7.35,6.7-15.88,6.7-24.99S11.45,8.35,7.2,1C2.95,8.35.5,16.88.5,25.99s2.45,17.64,6.7,24.99Z"/>
+    <path id="tri-6" d="M50.25,43.3c-7.6-4.39-16.22-6.7-25-6.7S7.85,38.91.25,43.3c7.6-4.39,13.91-10.7,18.3-18.3S25.25,8.78,25.25,0c0,8.78,2.31,17.4,6.7,25s10.7,13.91,18.3,18.3Z"/>
+    <path id="shield-4" d="M26.51,2.2c-4.13-1.1-8.47-1.7-12.95-1.7S4.74,1.1.61,2.2c2.3,8.61,6.83,16.3,12.95,22.42,6.12-6.11,10.65-13.81,12.95-22.42Z"/>
+    <path id="pillow-4" d="M15.15,24.8c4.48,0,8.82.6,12.95,1.7,1.1-4.13,1.7-8.47,1.7-12.94s-.6-8.81-1.7-12.94c-4.13,1.1-8.47,1.7-12.95,1.7S6.33,1.72,2.2.61C1.1,4.74.5,9.08.5,13.56s.6,8.81,1.7,12.94c4.13-1.1,8.47-1.7,12.95-1.7Z"/>
+    <path id="hex-4" d="M23.02,52.47c-6.11-6.11-13.81-10.64-22.41-12.94,1.1-4.13,1.7-8.46,1.7-12.94s-.6-8.81-1.7-12.94C9.22,11.35,16.91,6.82,23.02.71c6.11,6.11,13.8,10.64,22.4,12.94-1.1,4.13-1.7,8.47-1.7,12.94s.6,8.81,1.7,12.94c-8.6,2.3-16.29,6.83-22.4,12.94Z"/>
+    <path id="lens-12" d="M1.38,15.34c.57-2.14.88-4.39.88-6.7s-.31-4.57-.88-6.7c-.57,2.14-.88,4.39-.88,6.7s.31,4.57.88,6.7Z"/>
+    <path id="rocket-12" d="M7.2,25.11c2.32,0,4.56.31,6.7.88h0c0-9.11-2.45-17.64-6.7-24.99C2.95,8.35.5,16.88.5,25.99h0c2.14-.57,4.38-.88,6.7-.88Z"/>
+    <path id="mushroom-12" d="M19.12,26.39c4.39-7.59,10.72-13.92,18.3-18.31C32.74,3.4,26.26.5,19.12.5S5.5,3.4.81,8.08c7.59,4.39,13.91,10.72,18.3,18.31Z"/>
+</svg>
+
+
+
+
+<script>
+    document.querySelectorAll('#svg-loader path').forEach(path => {
+        path.setAttribute('display', 'none');
+        path.setAttribute('stroke', 'black')
+        path.setAttribute('stroke-width', '1');
+    });
+
+    let currentLevel = 1, isPlayMode = true, scrambleFunc = ()=>{}, testFunc = (x, y, a, b) => true;
+    let circles = [];
+    let pieces = [];
+    const sqrt2 = Math.sqrt(2), sqrt3 = Math.sqrt(3), sqrt6 = Math.sqrt(6);
+
+    class Circle {
+        constructor(x, y, r, s) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+            this.s = s;
+        }
+
+        containsPoint(x, y){
+            return distance(x, y, this.x, this.y) <= this.r;
+        }
+    }
+
+    class Piece {
+        constructor(svg, bias_x, bias_y, x, y, a, b) {
+            this.svg = svg;
+            this.bias_x = bias_x;
+            this.bias_y = bias_y;
+            this.x = x;
+            this.y = y;
+            this.a = a;
+            this.b = b;
+            this.win_x = x;
+            this.win_y = y;
+            this.win_a = a;
+        }
+
+        refreshGraphics(){
+            origin = rotate(this.x, this.y, this.x + this.bias_x, this.y + this.bias_y, this.a);
+            this.svg.setAttribute('transform', `translate(${origin.x}, ${origin.y}) rotate(${this.a})`);
+        }
+
+        startRotate() {
+            this.start_x = this.x;
+            this.start_y = this.y;
+            this.start_a = this.a;
+        }
+
+        rotate(rx, ry, angle) {
+            this.a = this.start_a + angle;
+            let pieceNewPos = rotate(rx, ry, this.start_x, this.start_y, angle);
+            this.x = pieceNewPos.x;
+            this.y = pieceNewPos.y;
+            this.refreshGraphics();
+        }
+    }
+
+    function rotate(centerX, centerY, x, y, angle){
+        angle = angle * Math.PI / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        return {
+            x: centerX + (x - centerX) * cos - (y - centerY) * sin,
+            y: centerY + (x - centerX) * sin + (y - centerY) * cos
+        };
+    }
+
+    function cosd(deg) { return Math.cos(deg / 180 * Math.PI); }
+    function sind(deg) { return Math.sin(deg / 180 * Math.PI); }
+
+    function distance(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
+
+    function angleBetween(x1, y1, x2, y2, x3, y3){
+        return (Math.atan2(y1 - y2, x1 - x2) - Math.atan2(y3 - y2, x3 - x2)) * 180 / Math.PI;
+    }
+
+    function getRelX() {
+        let viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
+        return viewboxRect.left + viewboxRect.width / 2;
+    }
+
+    function getRelY() {
+        let viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
+        return viewboxRect.top + viewboxRect.height / 2;
+    }
+
+    function loadSVG(id, color, s) {
+        const clone = document.getElementById(id).cloneNode(true);
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.appendChild(clone);
+        clone.setAttribute('fill', color);
+        clone.setAttribute('display', 'inline');
+        g.setAttribute('transform', `scale(${s})`);
+        const g2 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g2.appendChild(g);
+        return g2;
+    }
+
+    function shuffleGen(n, start) {
+        const array = Array.from({ length: n }, (_, index) => index + start);
+        for (let i = n - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        }
+        return array;
+    }
+
+    function generateScrambleFunc(groupArr) {
+        return () => {
+            let start = 0;
+            let mapping = groupArr.map(n => {
+                const shuffle = shuffleGen(n, start);
+                start += n;
+                return shuffle;
+            }).flat();
+            pieces.forEach((p, index) => {
+                p.x = pieces[mapping[index]].win_x;
+                p.y = pieces[mapping[index]].win_y;
+                p.a = pieces[mapping[index]].win_a;
+                p.refreshGraphics();
+            });
+        };
+    }
+
+    function genPiece(pieces, svg, bias_x, bias_y, circle, n, r, d, a, b) {
+        for(let i = 0; i < n; i++){
+            pieces.push(new Piece(svg.cloneNode(true), bias_x, bias_y,
+                circle.x + r * cosd(d + 360 / circle.s * i), circle.y + r * sind(d + 360 / circle.s * i), a + 360 / circle.s * i, b));
+        }
+    }
+
+    function loadLevel(level) {
+        currentLevel = level;
+        localStorage.setItem('currentLevel', level);
+        document.querySelectorAll('.level').forEach(levelElement => {
+            levelElement.style.textDecoration = levelElement.getAttribute('data-level') === level.toString() ? 'underline' : 'none';
+        });
+
+        document.getElementById('main-viewbox').innerHTML = '';
+        document.getElementById('mini-viewbox').innerHTML = '';
+
+        // Switch levels
+        if (level === 1) {
+            let r = 250;
+            circles = [
+                new Circle(-r / sqrt2, 0, r, 6),
+                new Circle(r / sqrt2, 0, r, 6)
+            ];
+            pieces = [];
+
+            const svg00 = loadSVG('shield-4', 'red', r/50);
+            const svg01 = loadSVG('shield-4', 'green', r/50);
+            const svg02 = loadSVG('shield-4', 'yellow', r/50);
+            const bias0x = -.275*r, bias0y = -.194*r;
+            genPiece(pieces, svg00, bias0x, bias0y, circles[0], 4, sqrt6/3*r, 90, 60, 0);
+            genPiece(pieces, svg01, bias0x, bias0y, circles[1], 4, sqrt6/3*r, -90, 0, 1);
+            genPiece(pieces, svg02, bias0x, bias0y, circles[1], 2, sqrt6/3*r, 150, 0, 2);
+
+            const svg10 = loadSVG('pillow-4', 'red', r/50);
+            const svg11 = loadSVG('pillow-4', 'green', r/50);
+            const svg12 = loadSVG('pillow-4', 'yellow', r/50);
+            const bias1x = -.303*r, bias1y = -.27*r;
+            genPiece(pieces, svg10, bias1x, bias1y, circles[0], 5, r/sqrt2, 60, 60, 0);
+            genPiece(pieces, svg11, bias1x, bias1y, circles[1], 5, r/sqrt2, -120, 60, 1);
+            genPiece(pieces, svg12, bias1x, bias1y, circles[0], 1, r/sqrt2, 0, 0, 2);
+
+            const svg20 = loadSVG('hex-4', 'red', r/50);
+            const svg21 = loadSVG('hex-4', 'green', r/50);
+            const bias2x = -.46*r, bias2y = -.53*r;
+            genPiece(pieces, svg20, bias2x, bias2y, circles[0], 1, 0, 0, 0, 0);
+            genPiece(pieces, svg21, bias2x, bias2y, circles[1], 1, 0, 0, 0, 1);
+
+            scrambleFunc = generateScrambleFunc([10, 11, 1, 1]);
+            testFunc = (x, y, a, b) => {
+                if (b == 0) return circles[0].containsPoint(x, y) && !circles[1].containsPoint(x, y);
+                else if (b == 1) return circles[1].containsPoint(x, y) && !circles[0].containsPoint(x, y);
+                else return circles[0].containsPoint(x, y) && circles[1].containsPoint(x, y);
+            };
+        }
+        else if (level == 2) {
+            let r = 300;
+            circles = [
+                new Circle(-r / 2, 0, r, 6),
+                new Circle(r / 2, 0, r, 6)
+            ];
+            pieces = [];
+            
+            const svg00 = loadSVG('lens-6', 'cyan', r/50);
+            const svg01 = loadSVG('lens-6', 'blue', r/50);
+            const bias0x = -.145*r, bias0y = -.52*r;
+            genPiece(pieces, svg00, bias0x, bias0y, circles[1], 6, r/2, 0, 90, 0);
+            genPiece(pieces, svg00, bias0x, bias0y, circles[1], 6, r/2*sqrt3, 30, 30, 0);
+            genPiece(pieces, svg01, bias0x, bias0y, circles[0], 3, r/2, 120, 210, 1);
+            genPiece(pieces, svg01, bias0x, bias0y, circles[0], 4, r/2*sqrt3, 90, 90, 1);
+
+            const svg10 = loadSVG('tri-6', 'cyan', r/50);
+            const svg11 = loadSVG('tri-6', 'blue', r/50);
+            const bias1x = -.435*r, bias1y = -.62*r;
+            genPiece(pieces, svg10, bias1x, bias1y, circles[1], 6, r/2, -30, 0, 0);
+            genPiece(pieces, svg11, bias1x, bias1y, circles[0], 4, r/2, 90, 120, 1);
+
+            scrambleFunc = generateScrambleFunc([19, 10]);
+            testFunc = (x, y, a, b) => {
+                if (b == 0) return circles[1].containsPoint(x, y);
+                else return !circles[1].containsPoint(x, y);
+            };
+        }
+        else if (level == 3){
+            let r = 300, rs = 2*r*sind(15);
+            circles = [
+                new Circle(r*sqrt3/2, -r/2, rs, 3),
+                new Circle(-r*sqrt3/2, -r/2, rs, 3),
+                new Circle(0, 0, r, 6)
+            ];
+            pieces = [];
+
+            const svg00 = loadSVG('lens-12', 'orange', r/50);
+            const svg01 = loadSVG('lens-12', 'purple', r/50);
+            const svg02 = loadSVG('lens-12', 'white',  r/50);
+            const bias0x = -.03*r, bias0y = -.17*r;
+            genPiece(pieces, svg00, bias0x, bias0y, circles[0], 3, r/2, 90, 90, 0);
+            genPiece(pieces, svg01, bias0x, bias0y, circles[1], 3, r/2, 90, 90, 1);
+            genPiece(pieces, svg02, bias0x, bias0y, circles[2], 2, r/2*sqrt3, 60, -30, 2);
+
+            const svg10 = loadSVG('rocket-12', 'orange', r/50);
+            const svg11 = loadSVG('rocket-12', 'purple', r/50);
+            const svg12 = loadSVG('rocket-12', 'white',  r/50);
+            const bias1x = -.145*r, bias1y = -.285*r;
+            genPiece(pieces, svg10, bias1x, bias1y, circles[0], 3, rs/2, -30, -120, 0);
+            genPiece(pieces, svg11, bias1x, bias1y, circles[1], 3, rs/2, -30, -120, 1);
+            let temp_rss = (r-rs)/2, tmp_r = Math.sqrt(r*r*.75+temp_rss*temp_rss),
+                tmp_d = Math.atan2(r*.75-temp_rss/2, r*sqrt3/4+temp_rss*sqrt3/2)*180/Math.PI;
+            genPiece(pieces, svg12, bias1x, bias1y, circles[2], 3, tmp_r, tmp_d, 60, 2);
+            genPiece(pieces, svg12, bias1x, bias1y, circles[2], 1, tmp_r, tmp_d-120, -60, 2);
+            genPiece(pieces, svg12, bias1x, bias1y, circles[2], 3, tmp_r, 60-tmp_d, 180, 2);
+            genPiece(pieces, svg12, bias1x, bias1y, circles[2], 1, tmp_r, -60-tmp_d, 60, 2);
+            
+            const svg20 = loadSVG('mushroom-12', 'orange', r/50);
+            const svg21 = loadSVG('mushroom-12', 'purple', r/50);
+            const svg22 = loadSVG('mushroom-12', 'white',  r/50);
+            const bias2x = -.385*r, bias2y = -.264*r;
+            genPiece(pieces, svg20, bias2x, bias2y, circles[0], 3, rs/2, 30, 120, 0);
+            genPiece(pieces, svg21, bias2x, bias2y, circles[1], 3, rs/2, 30, 120, 1);
+            genPiece(pieces, svg22, bias2x, bias2y, circles[2], 3, r-rs/2, 30, -60, 2);
+            genPiece(pieces, svg22, bias2x, bias2y, circles[2], 1, r-rs/2, -90, 180, 2);
+
+            scrambleFunc = generateScrambleFunc([8, 14, 10]);
+            testFunc = (x, y, a, b) => {
+                if (b == 0) return circles[0].containsPoint(x, y);
+                else if (b == 1) return circles[1].containsPoint(x, y);
+                else return !circles[0].containsPoint(x, y) && !circles[1].containsPoint(x, y);
+            };
+        }
+
+        // Setup main viewbox
+        // circles.forEach(c => {
+        //     const circleSvg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        //     circleSvg.setAttribute('cx', c.x);
+        //     circleSvg.setAttribute('cy', c.y);
+        //     circleSvg.setAttribute('r', c.r);
+        //     circleSvg.classList.add('dashline');
+        //     document.getElementById('main-viewbox').appendChild(circleSvg);
+        // });
+
+        pieces.forEach(p => {
+            document.getElementById('main-viewbox').appendChild(p.svg);
+        });
+
+        // Setup mini viewbox
+        // circles.forEach(c => {
+        //     const circleSvg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        //     circleSvg.setAttribute('cx', c.x);
+        //     circleSvg.setAttribute('cy', c.y);
+        //     circleSvg.setAttribute('r', c.r);
+        //     circleSvg.classList.add('dashline');
+        //     document.getElementById('mini-viewbox').appendChild(circleSvg);
+        // });
+
+        // Draw pieces in the mini viewbox at win position
+        pieces.forEach(p => {
+            const svg = p.svg.cloneNode(true);
+            origin = rotate(p.win_x, p.win_y, p.win_x + p.bias_x, p.win_y + p.bias_y, p.win_a);
+            svg.setAttribute('transform', `translate(${origin.x}, ${origin.y}) rotate(${p.win_a})`);
+            document.getElementById('mini-viewbox').appendChild(svg);
+        });
+
+        restart();
+    }
+
+    let currentCircle = null, currentPiece = null, startX, startY;
+
+    function debug(text){
+        document.getElementById('debug').textContent = text;
+    }
+
+    function onMouseDown(e) {
+        const target = e.target;
+        currentPiece = pieces.find(p => p.svg === target.parentNode.parentNode);
+        if (currentPiece) {
+            startX = e.clientX - getRelX();
+            startY = e.clientY - getRelY();
+        }
+    }
+
+    function onMouseMove(e) {
+        // debug("Mouse move");
+        let mx = e.clientX - getRelX(), my = e.clientY - getRelY();
+        if (currentPiece && !currentCircle) {
+            let minAngle = 999;
+            circles.forEach(c => {
+                if (c.containsPoint(mx, my)) {
+                    let angle = angleBetween(
+                        mx, my, startX, startY, c.x, c.y
+                    );
+                    angle = (angle + 540) % 360 - 180;
+                    angle = Math.abs(angle);
+                    if (angle < minAngle) {
+                        minAngle = angle;
+                        currentCircle = c;
+                    }
+                }
+            });
+            pieces.forEach(piece => {
+                piece.startRotate();
+            });
+        }
+        if (currentCircle) {
+            currentPiece = null;
+            let delta_a = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
+            pieces.forEach(piece => {
+                if (distance(piece.x, piece.y, currentCircle.x, currentCircle.y) <= currentCircle.r) {
+                    piece.rotate(currentCircle.x, currentCircle.y, delta_a);
+                }
+            });
+        }
+    }
+
+    function onMouseUp(e) {
+        // debug("Mouse up");
+        let mx = e.clientX - getRelX(), my = e.clientY - getRelY();
+        if (currentCircle) {
+            let angle = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
+            angle = Math.round(angle / (360 / currentCircle.s)) * (360 / currentCircle.s);
+            pieces.forEach(piece => {
+                if (distance(piece.x, piece.y, currentCircle.x, currentCircle.y) <= currentCircle.r) {
+                    piece.rotate(currentCircle.x, currentCircle.y, angle);
+                }
+            });
+            if (isPlayMode && pieces.every(p => testFunc(p.x, p.y, p.a, p.b))) {
+                debug('You win!');
+                markLevelAsWon(currentLevel);
+            }
+        }
+        currentPiece = null;
+        currentCircle = null;
+    }
+
+    function restart() {
+        isPlayMode = true;
+        document.getElementById('solve-button').textContent = 'Solve/Restore';
+        scrambleFunc();
+        pieces.forEach(piece => {
+            piece.refreshGraphics();
+        });
+    }
+
+    function solve() {
+        const button = document.getElementById('solve-button');
+        if (button.textContent.startsWith('Solve')) {
+            pieces.forEach(piece => {
+                piece.restore_x = piece.x;
+                piece.restore_y = piece.y;
+                piece.restore_a = piece.a;
+                piece.x =         piece.win_x;
+                piece.y =         piece.win_y;
+                piece.a =         piece.win_a;
+                piece.refreshGraphics();
+            });
+            button.textContent = 'Restore';
+            isPlayMode = false;
+        } else {
+            pieces.forEach(piece => {
+                piece.x = piece.restore_x;
+                piece.y = piece.restore_y;
+                piece.a = piece.restore_a;
+                piece.refreshGraphics();
+            });
+            button.textContent = 'Solve';
+            isPlayMode = true;
+        }
+    }
+
+    function markLevelAsWon(level) {
+        const winData = localStorage.getItem('winData') || '0';
+        const winBit = 1 << (level - 1);
+        const newWinData = parseInt(winData) | winBit;
+        localStorage.setItem('winData', newWinData);
+        document.querySelector(`.level[data-level="${level}"]`).classList.add('won');
+    }
+
+    function loadHistory() {
+        const winData = parseInt(localStorage.getItem('winData') || '0');
+        document.querySelectorAll('.level').forEach(levelElement => {
+            const level = parseInt(levelElement.getAttribute('data-level'));
+            if ((winData & (1 << (level - 1))) !== 0) {
+                levelElement.classList.add('won');
+            }
+        });
+    }
+
+    function loadCurrentLevel() {
+        return parseInt(localStorage.getItem('currentLevel') || '1');
+    }
+
+    document.getElementById('main-viewbox').addEventListener('pointerdown', onMouseDown);
+    document.addEventListener('pointermove', onMouseMove);
+    document.addEventListener('pointerup', onMouseUp);
+    document.getElementById('restart-button').addEventListener('click', restart);
+    document.getElementById('solve-button').addEventListener('click', solve);
+    document.querySelectorAll('.level').forEach(levelElement => {
+        levelElement.addEventListener('click', () => {
+            const level = parseInt(levelElement.getAttribute('data-level'));
+            loadLevel(level);
+        });
+    });
+
+    // Initial setup
+    loadHistory();
+    loadLevel(loadCurrentLevel());
+</script>
+</body>
+</html>
