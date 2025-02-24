@@ -5,37 +5,178 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orbitrix</title>
     <style>
-        .dashline { stroke-dasharray: 5, 5; stroke: black; fill: none; }
-        .draggable { cursor: grab; }
-        #debug { font-size: 24px; color: green; }
-        #mini-viewbox { border: 1px solid black;  }
-        #control-panel { margin-bottom: 10px; }
-        .level { color: orange; cursor: pointer; display: inline-block; margin: 0 5px; }
-        .level.won { color: green; }
-        #main-viewbox { display: block; border: 1px solid black; margin: auto; }
-        body { font-size: 18px;}
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --accent-color: #3498db;
+            --border-color: #333333;
+            --button-bg: #2c3e50;
+            --button-hover: #34495e;
+            --level-default: #e67e22;
+            --level-won: #2ecc71;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 18px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 300px 1fr;
+            grid-template-areas: 
+                "sidebar main";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-area {
+            grid-area: main;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .level-selection {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .level {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--level-default);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .level.won {
+            color: var(--level-won);
+        }
+
+        #mini-viewbox {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        #main-viewbox {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #debug {
+            color: var(--accent-color);
+            margin: 10px 0;
+            min-height: 24px;
+        }
+
+        .dashline {
+            stroke: var(--text-color);
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "sidebar"
+                    "main";
+            }
+
+            .sidebar {
+                align-items: center;
+            }
+
+            #main-viewbox {
+                width: 100%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="game-container">
+        <div class="sidebar">
+            <div class="level-selection">
+                <h3>Level Selection</h3>
+                <div>
+                    <span class="level" data-level="1">1</span>
+                    <span class="level" data-level="2">2</span>
+                    <span class="level" data-level="3">3</span>
+                    <span style="opacity: 0.5">(More incoming...)</span>
+                </div>
+            </div>
+            
+            <div>
+                <h3>Target</h3>
+                <svg id="mini-viewbox" width="240" height="180" viewBox="-480 -360 960 720"></svg>
+            </div>
+            
+            <div class="control-panel">
+                <button id="restart-button">Scramble</button>
+                <button id="solve-button">Solve</button>
+            </div>
+            
+            <div id="debug"></div>
+        </div>
 
-<div>Level Selection: 
-    <span class="level" data-level="1">1</span>
-    <span class="level" data-level="2">2</span>
-    <span class="level" data-level="3">3</span>
-    (More incoming...)
-</div>
-<div>Target:</div>
-<svg id="mini-viewbox" width="240" height="180" viewBox="-480 -360 960 720"></svg>
-<div id="control-panel">
-    <button id="restart-button">Scramble</button>
-    <button id="solve-button">Solve</button>
-</div>
-<div id="debug"></div>
-<div>
-    <svg id="main-viewbox" width="960" height="720" viewBox="-480 -360 960 720"></svg>
-</div>
+        <div class="main-area">
+            <svg id="main-viewbox" width="960" height="720" viewBox="-480 -360 960 720"></svg>
+        </div>
+    </div>
 
-<svg id="svg-loader">
+<svg id="svg-loader" style="display: none;">
     <path id="lens-6" d="M7.2,50.98c4.25-7.35,6.7-15.88,6.7-24.99S11.45,8.35,7.2,1C2.95,8.35.5,16.88.5,25.99s2.45,17.64,6.7,24.99Z"/>
     <path id="tri-6" d="M50.25,43.3c-7.6-4.39-16.22-6.7-25-6.7S7.85,38.91.25,43.3c7.6-4.39,13.91-10.7,18.3-18.3S25.25,8.78,25.25,0c0,8.78,2.31,17.4,6.7,25s10.7,13.91,18.3,18.3Z"/>
     <path id="shield-4" d="M26.51,2.2c-4.13-1.1-8.47-1.7-12.95-1.7S4.74,1.1.61,2.2c2.3,8.61,6.83,16.3,12.95,22.42,6.12-6.11,10.65-13.81,12.95-22.42Z"/>
@@ -45,9 +186,6 @@
     <path id="rocket-12" d="M7.2,25.11c2.32,0,4.56.31,6.7.88h0c0-9.11-2.45-17.64-6.7-24.99C2.95,8.35.5,16.88.5,25.99h0c2.14-.57,4.38-.88,6.7-.88Z"/>
     <path id="mushroom-12" d="M19.12,26.39c4.39-7.59,10.72-13.92,18.3-18.31C32.74,3.4,26.26.5,19.12.5S5.5,3.4.81,8.08c7.59,4.39,13.91,10.72,18.3,18.31Z"/>
 </svg>
-
-
-
 
 <script>
     document.querySelectorAll('#svg-loader path').forEach(path => {
@@ -305,6 +443,7 @@
                 else if (b == 1) return circles[1].containsPoint(x, y);
                 else return !circles[0].containsPoint(x, y) && !circles[1].containsPoint(x, y);
             };
+            debug('');
         }
 
         // Setup main viewbox
