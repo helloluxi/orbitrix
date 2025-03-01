@@ -3,6 +3,7 @@
 let lvId, lv;
 let isPlayMode = true;
 let currentPiece = null, currentCircle = null, startX, startY;
+let arrowButton = document.getElementById('arrow-button');
 
 function getRelX() {
     const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
@@ -42,6 +43,7 @@ function switchMode() {
             piece.refreshGraphics();
         });
         isPlayMode = false;
+        arrowButton.style.display = 'block';
         debug('Test Mode');
     } else {
         lv.pieces.forEach(piece => {
@@ -51,6 +53,7 @@ function switchMode() {
             piece.refreshGraphics();
         });
         isPlayMode = true;
+        arrowButton.style.display = 'none';
         debug('');
     }
 }
@@ -76,6 +79,10 @@ function onStart(e) {
     if (currentPiece) {
         startX = coords.clientX - getRelX();
         startY = coords.clientY - getRelY();
+    }
+    if (arrows.length > 0) {
+        arrows.forEach(arrow => arrow.remove());
+        arrows = [];
     }
 }
 
@@ -142,6 +149,63 @@ function onEnd(e) {
     currentCircle = null;
 }
 
+let arrows = [];
+function toggleArrows() {
+    if (arrows.length === 0) {
+        // First, create the arrowhead marker definition if it doesn't exist
+        let defs = document.getElementById('arrow-defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            defs.id = 'arrow-defs';
+            document.getElementById('main-viewbox').appendChild(defs);
+            
+            // Create a marker element for the arrowhead
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '6');
+            marker.setAttribute('markerHeight', '4');
+            marker.setAttribute('refX', '6');  // Changed to markerWidth to align tip with endpoint
+            marker.setAttribute('refY', '2');
+            marker.setAttribute('orient', 'auto');
+            
+            // Create the actual arrowhead shape (a polygon without stroke)
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 6 2, 0 4');
+            polygon.setAttribute('fill', 'pink');
+            polygon.setAttribute('stroke', 'none');
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+        }
+        
+        // Now create the arrows with the marker
+        lv.pieces.forEach(piece => {
+            const distance = Math.hypot(piece.x - piece.win_x, piece.y - piece.win_y);
+            if (distance > 1) { // Adjust the threshold as needed
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                arrow.setAttribute('stroke', 'pink');
+                arrow.setAttribute('stroke-width', '5');
+                arrow.setAttribute('marker-end', 'url(#arrowhead)');
+                
+                // Use exact endpoints - no adjustment
+                arrow.setAttribute('x1', piece.win_x);
+                arrow.setAttribute('y1', piece.win_y);
+                arrow.setAttribute('x2', piece.x);
+                arrow.setAttribute('y2', piece.y);
+                
+                document.getElementById('main-viewbox').appendChild(arrow);
+                arrows.push(arrow);
+            }
+        });
+    }
+    else {
+        arrows.forEach(arrow => {
+            arrow.remove();
+        });
+        arrows = [];
+    } 
+}
+
 // Initialize event listeners (only for index.html)
 function initGame() {
     const mainViewbox = document.getElementById('main-viewbox');
@@ -159,6 +223,7 @@ function initGame() {
 
     document.getElementById('restart-button').addEventListener('click', resetPuzzle);
     document.getElementById('switch-button').addEventListener('click', switchMode);
+    arrowButton.addEventListener('click', toggleArrows);
 }
 
 function initLevel(levelId) {
@@ -169,5 +234,6 @@ function initLevel(levelId) {
     initViewBox(lv.pieces, mainViewbox, false);
     initViewBox(lv.pieces, miniViewbox);
     isPlayMode = true;
+    arrowButton.style.display = 'none';
     resetPuzzle();
 }
