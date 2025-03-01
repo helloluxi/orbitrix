@@ -54,6 +54,10 @@ body {
     flex-direction: column;
     align-items: center;
     touch-action: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .game-container {
@@ -61,7 +65,7 @@ body {
     max-width: 1200px;
     display: grid;
     gap: 20px;
-    grid-template-columns: 250px 1fr; /* Changed from 300px to 200px */
+    grid-template-columns: 250px 1fr;
     grid-template-areas: 
         "sidebar main";
 }
@@ -71,6 +75,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding: 15px;
 }
 
 .menu-icon {
@@ -113,6 +118,13 @@ body {
     color: var(--level-won);
 }
 
+.control-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
 #mini-viewbox,
 #main-viewbox {
     background: rgba(255, 255, 255, 0.03);
@@ -132,7 +144,7 @@ body {
 }
 
 button {
-    padding: 12px 24px;
+    padding: 12px 12px;
     border: none;
     border-radius: 6px;
     background-color: var(--button-bg);
@@ -271,9 +283,9 @@ footer a {
 }
 
 /* Prevent text selection during gameplay */
-* {
+/* * {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-}
+} */
