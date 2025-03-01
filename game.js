@@ -1,9 +1,16 @@
 
-// Global variables used by both pages
 let lvId, lv;
 let isPlayMode = true;
 let currentPiece = null, currentCircle = null, startX, startY;
 let arrowButton = document.getElementById('arrow-button');
+
+let arrows = [];
+function tryClearArrows() {
+    if (arrows.length > 0) {
+        arrows.forEach(arrow => arrow.remove());
+        arrows = [];
+    }
+}
 
 function getRelX() {
     const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
@@ -29,6 +36,7 @@ function resetPuzzle() {
             piece.refreshGraphics();
         });
     }
+    tryClearArrows();
 }
 
 function switchMode() {
@@ -56,6 +64,7 @@ function switchMode() {
         arrowButton.style.display = 'none';
         debug('');
     }
+    tryClearArrows();
 }
 
 function debug(text) {
@@ -80,10 +89,7 @@ function onStart(e) {
         startX = coords.clientX - getRelX();
         startY = coords.clientY - getRelY();
     }
-    if (arrows.length > 0) {
-        arrows.forEach(arrow => arrow.remove());
-        arrows = [];
-    }
+    tryClearArrows();
 }
 
 function onMove(e) {
@@ -149,7 +155,6 @@ function onEnd(e) {
     currentCircle = null;
 }
 
-let arrows = [];
 function toggleArrows() {
     if (arrows.length === 0) {
         // First, create the arrowhead marker definition if it doesn't exist
@@ -198,12 +203,7 @@ function toggleArrows() {
             }
         });
     }
-    else {
-        arrows.forEach(arrow => {
-            arrow.remove();
-        });
-        arrows = [];
-    } 
+    else tryClearArrows();
 }
 
 // Initialize event listeners (only for index.html)
