@@ -28,6 +28,7 @@
             font-size: 16px;
             touch-action: none;
             overflow-x: hidden;
+            font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
         }
 
         .game-container {
@@ -58,7 +59,7 @@
         .control-panel {
             display: flex;
             gap: 10px;
-            margin: 20px 0;
+            margin: 10px 0;
             flex-wrap: wrap;
         }
 
@@ -134,6 +135,7 @@
             margin: 10px 0;
             min-height: 24px;
             text-align: center;
+            font-size: 20px;
         }
 
         .dashline {
@@ -186,6 +188,20 @@
                 font-size: 18px;
             }
         }
+        footer {
+            text-align: center;
+            font-size: 12px;
+            padding: 0;
+            background: transparent;
+            /* border-top: 1px solid #ccc; */
+            position: fixed;
+            bottom: 15px;
+            width: 100%;
+        }
+        footer a {
+            color: #fff;
+            text-decoration: underline;
+        }
 
         /* Prevent text selection during gameplay */
         * {
@@ -205,7 +221,6 @@
                 <span class="level" data-level="1">1</span>
                 <span class="level" data-level="2">2</span>
                 <span class="level" data-level="3">3</span>
-                <span style="opacity: 0.5">(More incoming...)</span>
             </div>
         </div>
         
@@ -215,8 +230,8 @@
         </div>
         
         <div class="control-panel">
-            <button id="restart-button">Scramble</button>
-            <button id="solve-button">Solve</button>
+            <button id="restart-button">Reset</button>
+            <button id="switch-button">Switch Mode</button>
         </div>
         
         <div id="debug"></div>
@@ -226,6 +241,9 @@
         <svg id="main-viewbox" width="960" height="720" viewBox="-480 -360 960 720"></svg>
     </div>
 </div>
+<footer>
+    &copy;2024-<span id="year"></span> Xi Lu. Released under MIT license. View on <a href="https://github.com/helloluxi/orbitrix">Github.</a>
+</footer>
 
 <svg id="svg-loader" style="display: none;">
     <path id="lens-6" d="M7.2,50.98c4.25-7.35,6.7-15.88,6.7-24.99S11.45,8.35,7.2,1C2.95,8.35.5,16.88.5,25.99s2.45,17.64,6.7,24.99Z"/>
@@ -239,6 +257,8 @@
 </svg>
 
 <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
     document.querySelectorAll('#svg-loader path').forEach(path => {
         path.setAttribute('display', 'none');
         path.setAttribute('stroke', 'black')
@@ -529,7 +549,7 @@
             document.getElementById('mini-viewbox').appendChild(svg);
         });
 
-        restart();
+        resetPuzzle();
     }
 
     let currentCircle = null, currentPiece = null, startX, startY;
@@ -538,80 +558,26 @@
         document.getElementById('debug').textContent = text;
     }
 
-    function onMouseDown(e) {
-        const target = e.target;
-        currentPiece = pieces.find(p => p.svg === target.parentNode.parentNode);
-        if (currentPiece) {
-            startX = e.clientX - getRelX();
-            startY = e.clientY - getRelY();
-        }
-    }
-
-    function onMouseMove(e) {
-        // debug("Mouse move");
-        let mx = e.clientX - getRelX(), my = e.clientY - getRelY();
-        if (currentPiece && !currentCircle) {
-            let minAngle = 999;
-            circles.forEach(c => {
-                if (c.containsPoint(mx, my)) {
-                    let angle = angleBetween(
-                        mx, my, startX, startY, c.x, c.y
-                    );
-                    angle = (angle + 540) % 360 - 180;
-                    angle = Math.abs(angle);
-                    if (angle < minAngle) {
-                        minAngle = angle;
-                        currentCircle = c;
-                    }
-                }
-            });
+    function resetPuzzle() {
+        if (isPlayMode){
+            scrambleFunc();
             pieces.forEach(piece => {
-                piece.startRotate();
+                piece.refreshGraphics();
             });
         }
-        if (currentCircle) {
-            currentPiece = null;
-            let delta_a = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
+        else{
             pieces.forEach(piece => {
-                if (distance(piece.x, piece.y, currentCircle.x, currentCircle.y) <= currentCircle.r) {
-                    piece.rotate(currentCircle.x, currentCircle.y, delta_a);
-                }
+                piece.x = piece.win_x;
+                piece.y = piece.win_y;
+                piece.a = piece.win_a;
+                piece.refreshGraphics();
             });
         }
     }
 
-    function onMouseUp(e) {
-        // debug("Mouse up");
-        let mx = e.clientX - getRelX(), my = e.clientY - getRelY();
-        if (currentCircle) {
-            let angle = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
-            angle = Math.round(angle / (360 / currentCircle.s)) * (360 / currentCircle.s);
-            pieces.forEach(piece => {
-                if (distance(piece.x, piece.y, currentCircle.x, currentCircle.y) <= currentCircle.r) {
-                    piece.rotate(currentCircle.x, currentCircle.y, angle);
-                }
-            });
-            if (isPlayMode && pieces.every(p => testFunc(p.x, p.y, p.a, p.b))) {
-                debug('You win!');
-                markLevelAsWon(currentLevel);
-            }
-        }
-        currentPiece = null;
-        currentCircle = null;
-    }
-
-    function restart() {
-        isPlayMode = true;
-        document.getElementById('solve-button').textContent = 'Solve/Restore';
-        scrambleFunc();
-        pieces.forEach(piece => {
-            piece.refreshGraphics();
-        });
-    }
-
-    function solve() {
-        const button = document.getElementById('solve-button');
-        if (button.textContent.startsWith('Solve')) {
+    function switchMode() {
+        const button = document.getElementById('switch-button');
+        if (isPlayMode) {
             pieces.forEach(piece => {
                 piece.restore_x = piece.x;
                 piece.restore_y = piece.y;
@@ -621,8 +587,8 @@
                 piece.a =         piece.win_a;
                 piece.refreshGraphics();
             });
-            button.textContent = 'Restore';
             isPlayMode = false;
+            debug('Test Mode');
         } else {
             pieces.forEach(piece => {
                 piece.x = piece.restore_x;
@@ -630,8 +596,8 @@
                 piece.a = piece.restore_a;
                 piece.refreshGraphics();
             });
-            button.textContent = 'Solve';
             isPlayMode = true;
+            debug('');
         }
     }
 
@@ -725,7 +691,7 @@
                 }
             });
             if (isPlayMode && pieces.every(p => testFunc(p.x, p.y, p.a, p.b))) {
-                debug('You win!');
+                debug('Congratulations!');
                 markLevelAsWon(currentLevel);
             }
         }
@@ -748,8 +714,8 @@
     document.addEventListener('mouseup', onEnd);
 
     // Rest of your JavaScript initialization code remains the same
-    document.getElementById('restart-button').addEventListener('click', restart);
-    document.getElementById('solve-button').addEventListener('click', solve);
+    document.getElementById('restart-button').addEventListener('click', resetPuzzle);
+    document.getElementById('switch-button').addEventListener('click', switchMode);
     document.querySelectorAll('.level').forEach(levelElement => {
         levelElement.addEventListener('click', () => {
             const level = parseInt(levelElement.getAttribute('data-level'));
