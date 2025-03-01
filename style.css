@@ -25,11 +25,47 @@ body {
     font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
 }
 
+#menu-view {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
 #menu-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* or space-around / space-between */
-    gap: 20px; /* spacing between items */
+    justify-content: center;
+    gap: 20px;
+    overflow-y: auto; /* Enable vertical scrolling when needed */
+    padding: 10px;
+    flex: 1; /* Fill available space */
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 50px; /* Space for footer */
+}
+
+/* Smooth scrolling for better UX */
+#menu-container {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+}
+
+/* Customize scrollbar appearance */
+#menu-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#menu-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+#menu-container::-webkit-scrollbar-thumb {
+    background-color: var(--button-bg);
+    border-radius: 4px;
 }
 
 .menu-level {
@@ -188,7 +224,7 @@ footer a {
     text-decoration: underline;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1170px) {
     body {
         padding: 5px;
     }
@@ -276,7 +312,7 @@ footer a {
 }
 
 /* Ensure that on small screens each entry stacks nicely */
-@media (max-width: 768px) {
+@media (max-width: 1170px) {
     .menu-level {
         width: calc(50% - 20px);
     }
