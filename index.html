@@ -25,10 +25,10 @@
           <div class="control-panel">
             <h3>Goal</h3>
           </div>
-          <svg id="mini-viewbox" width="240" height="180" viewBox="-480 -360 960 720"></svg>
+          <svg id="mini-viewbox" width="160" height="120" viewBox="-480 -360 960 720"></svg>
         </div>
         <div class="control-panel">
-          <button id="restart-button">Reset</button>
+          <button id="restart-button">Reset Puzzle</button>
           <button id="switch-button">Switch Mode</button>
         </div>
         <div class="control-panel">
@@ -73,7 +73,7 @@
         const hasWon = localStorage.getItem(levelId) === '1';
         const label = document.createElement('div');
         label.className = 'menu-label';
-        label.innerHTML = `<span class="level-status" style="color: ${hasWon ? 'var(--level-won)' : 'var(--level-default)'};">${index+1} ${levelData.name}</span>`;
+        label.innerHTML = `<span class="level-status" style="color: ${hasWon ? 'var(--level-won)' : 'var(--level-default)'};">${index+1}. ${levelData.name}</span>`;
         menuBlock.appendChild(label);
         // When clicking the menu block, save the level and switch to game view
         menuBlock.addEventListener('click', () => {
