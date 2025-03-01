@@ -41,18 +41,6 @@
     &copy;2024-<span id="year"></span> Xi Lu. Released under MIT license. View on <a href="https://github.com/helloluxi/orbitrix">Github.</a>
   </footer>
 
-  <!-- Hidden SVG definitions -->
-  <svg id="svg-loader" style="display: none;">
-    <path id="lens-6" d="M7.2,50.98c4.25-7.35,6.7-15.88,6.7-24.99S11.45,8.35,7.2,1C2.95,8.35.5,16.88.5,25.99s2.45,17.64,6.7,24.99Z"/>
-    <path id="tri-6" d="M50.25,43.3c-7.6-4.39-16.22-6.7-25-6.7S7.85,38.91.25,43.3c7.6-4.39,13.91-10.7,18.3-18.3S25.25,8.78,25.25,0c0,8.78,2.31,17.4,6.7,25s10.7,13.91,18.3,18.3Z"/>
-    <path id="shield-4" d="M26.51,2.2c-4.13-1.1-8.47-1.7-12.95-1.7S4.74,1.1.61,2.2c2.3,8.61,6.83,16.3,12.95,22.42,6.12-6.11,10.65-13.81,12.95-22.42Z"/>
-    <path id="pillow-4" d="M15.15,24.8c4.48,0,8.82.6,12.95,1.7,1.1-4.13,1.7-8.47,1.7-12.94s-.6-8.81-1.7-12.94c-4.13,1.1-8.47,1.7-12.95,1.7S6.33,1.72,2.2.61C1.1,4.74.5,9.08.5,13.56s.6,8.81,1.7,12.94c4.13-1.1,8.47-1.7,12.95-1.7Z"/>
-    <path id="hex-4" d="M23.02,52.47c-6.11-6.11-13.81-10.64-22.41-12.94,1.1-4.13,1.7-8.46,1.7-12.94s-.6-8.81-1.7-12.94C9.22,11.35,16.91,6.82,23.02.71c6.11,6.11,13.8,10.64,22.4,12.94-1.1,4.13-1.7,8.47-1.7,12.94s.6,8.81,1.7,12.94c-8.6,2.3-16.29,6.83-22.4,12.94Z"/>
-    <path id="lens-12" d="M1.38,15.34c.57-2.14.88-4.39.88-6.7s-.31-4.57-.88-6.7c-.57,2.14-.88,4.39-.88,6.7s.31,4.57.88,6.7Z"/>
-    <path id="rocket-12" d="M7.2,25.11c2.32,0,4.56.31,6.7.88h0c0-9.11-2.45-17.64-6.7-24.99C2.95,8.35.5,16.88.5,25.99h0c2.14-.57,4.38-.88,6.7-.88Z"/>
-    <path id="mushroom-12" d="M19.12,26.39c4.39-7.59,10.72-13.92,18.3-18.31C32.74,3.4,26.26.5,19.12.5S5.5,3.4.81,8.08c7.59,4.39,13.91,10.72,18.3,18.31Z"/>
-  </svg>
-
   <script src="levels.js"></script>
   <script src="game.js"></script>
   <script>
@@ -60,7 +48,7 @@
 
     // Generate level menu previews
     function generateMenu() {
-      const levelsArr = [1, 2, 3]; // List all available level numbers here
+      const levelsArr = [4813, 5639, 3623, 2767, 9547];
       const menuContainer = document.getElementById('menu-container');
       menuContainer.innerHTML = '';
       
@@ -80,7 +68,7 @@
         const hasWon = localStorage.getItem(levelId) === '1';
         const label = document.createElement('div');
         label.className = 'menu-label';
-        label.innerHTML = `<span class="level-status" style="color: ${hasWon ? 'var(--level-won)' : 'var(--level-default)'};">${index+1}</span>`;
+        label.innerHTML = `<span class="level-status" style="color: ${hasWon ? 'var(--level-won)' : 'var(--level-default)'};">${index+1} ${levelData.name}</span>`;
         menuBlock.appendChild(label);
         // When clicking the menu block, save the level and switch to game view
         menuBlock.addEventListener('click', () => {
@@ -96,6 +84,7 @@
       document.getElementById('menu-view').style.display = 'none';
       document.getElementById('game-view').style.display = 'block';
       initLevel(levelId);
+      initGame();
     }
     
     // Switch from game view back to menu view
@@ -106,7 +95,6 @@
     }
     
     // Initially display the menu view
-    initGame();
     generateMenu();
   </script>
 </body>

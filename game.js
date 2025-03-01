@@ -1,6 +1,6 @@
 
 // Global variables used by both pages
-let currentLevel, lv;
+let lvId, lv;
 let isPlayMode = true;
 let currentPiece = null, currentCircle = null, startX, startY;
 
@@ -105,7 +105,7 @@ function onMove(e) {
         currentPiece = null;
         let delta_a = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
         lv.pieces.forEach(piece => {
-            if (distance(piece.x, piece.y, currentCircle.x, currentCircle.y) <= currentCircle.r) {
+            if (currentCircle.containsPoint(piece.x, piece.y)) {
                 piece.rotate(currentCircle.x, currentCircle.y, delta_a);
             }
         });
@@ -116,19 +116,27 @@ function onEnd(e) {
     e.preventDefault();
     const coords = e.changedTouches ? e.changedTouches[0] : e;
     let mx = coords.clientX - getRelX(), my = coords.clientY - getRelY();
+    const testWin = isPlayMode || localStorage.getItem(0) == 1;
     
     if (currentCircle) {
         let angle = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
         angle = Math.round(angle / (360 / currentCircle.s)) * (360 / currentCircle.s);
         lv.pieces.forEach(piece => {
-            if (distance(piece.x, piece.y, currentCircle.x, currentCircle.y) <= currentCircle.r) {
+            if (currentCircle.containsPoint(piece.x, piece.y)) {
                 piece.rotate(currentCircle.x, currentCircle.y, angle);
             }
         });
-        if (isPlayMode && lv.pieces.every(p => lv.testFunc(p.x, p.y, p.a, p.b))) {
+        if (testWin && lv.pieces.every(p => lv.testFunc(p.x, p.y, p.a, p.b))) {
             debug('Congratulations!');
-            localStorage.setItem(currentLevel, 1);
+            localStorage.setItem(lvId, 1);
         }
+        // else{
+        //     lv.pieces.forEach(piece => {
+        //         if (!lv.testFunc(piece.x, piece.y, piece.a, piece.b)) {
+        //             console.log(`Piece at (${piece.x}, ${piece.y}) with angle ${piece.a} did not pass the test.`);
+        //         }
+        //     });
+        // }
     }
     currentPiece = null;
     currentCircle = null;
@@ -156,7 +164,7 @@ function initGame() {
 function initLevel(levelId) {
     const mainViewbox = document.getElementById('main-viewbox');
     const miniViewbox = document.getElementById('mini-viewbox');
-    currentLevel = levelId;
+    lvId = levelId;
     lv = loadLevel(levelId);
     initViewBox(lv.pieces, mainViewbox, false);
     initViewBox(lv.pieces, miniViewbox);
