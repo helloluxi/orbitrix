@@ -129,7 +129,7 @@ function onEnd(e) {
     e.preventDefault();
     const coords = e.changedTouches ? e.changedTouches[0] : e;
     let mx = coords.clientX - getRelX(), my = coords.clientY - getRelY();
-    const testWin = isPlayMode || localStorage.getItem(0) == 1;
+    const testWin = isPlayMode || localStorage.getItem('obx.debug') == 1;
     
     if (currentCircle) {
         let angle = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
@@ -141,7 +141,7 @@ function onEnd(e) {
         });
         if (testWin && lv.pieces.every(p => lv.testFunc(p.x, p.y, p.a, p.b))) {
             debug('Congratulations!');
-            localStorage.setItem(lvId, 1);
+            localStorage.setItem(`obx.p${lvId}`, 1);
         }
         // else{
         //     lv.pieces.forEach(piece => {

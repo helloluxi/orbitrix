@@ -70,7 +70,7 @@
         initViewBox(levelData.pieces, viewBox, true);
         menuBlock.appendChild(viewBox);
         // Create a label with the level number and a disabled checkbox showing solved status
-        const hasWon = localStorage.getItem(levelId) === '1';
+        const hasWon = localStorage.getItem(`obx.p${levelId}`) === '1';
         const label = document.createElement('div');
         label.className = 'menu-label';
         label.innerHTML = `<span class="level-status" style="color: ${hasWon ? 'var(--level-won)' : 'var(--level-default)'};">${index+1}. ${levelData.name}</span>`;
@@ -85,7 +85,6 @@
 
     // Switch from menu view to game view
     function switchToGame(levelId) {
-      localStorage.setItem('levelId', levelId);
       document.getElementById('menu-view').style.display = 'none';
       document.getElementById('game-view').style.display = 'block';
       initLevel(levelId);
