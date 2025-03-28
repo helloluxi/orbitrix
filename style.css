@@ -29,23 +29,24 @@ body {
 #menu-view {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    min-height: 100vh;
     width: 100%;
     padding: 20px;
     box-sizing: border-box;
+    position: relative;
 }
 
 #menu-container {
+    max-width: 1000px;
+    margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 20px;
-    overflow-y: auto;
+    gap: 15px;
     padding: 10px;
     width: 100%;
     box-sizing: border-box;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
+    margin-bottom: 40px;
 }
 
 #menu-container {
@@ -211,11 +212,13 @@ button:hover {
 footer {
     text-align: center;
     font-size: 12px;
-    padding: 0;
-    background: transparent;
+    padding: 8px 0;
+    background-color: var(--bg-color);
     position: fixed;
-    bottom: 15px;
+    bottom: 0;
     width: 100%;
+    z-index: 1000;
+    border-top: 1px solid var(--border-color);
 }
 
 footer a {
@@ -270,6 +273,9 @@ footer a {
 #menu-view h1 {
     text-align: center;
     margin-bottom: 30px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Each menu entry as a rounded rectangle */
@@ -324,3 +330,15 @@ footer a {
     -ms-user-select: none;
     user-select: none;
 } */
+
+@media (max-width: 850px) {
+    #menu-container {
+        max-width: 100%;
+        padding: 10px 20px;
+    }
+    
+    #menu-view h1 {
+        max-width: 100%;
+        padding: 0 20px;
+    }
+}

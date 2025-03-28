@@ -1,4 +1,3 @@
-
 const sqrt2 = Math.sqrt(2), sqrt3 = Math.sqrt(3), sqrt6 = Math.sqrt(6), pi = Math.PI;
 const sin15 = Math.sin(pi / 12), cos15 = Math.cos(pi / 12), cos45 = Math.sin(pi / 4), cos30 = Math.cos(pi / 6);
 
@@ -459,40 +458,35 @@ function loadLevel(levelId) {
         let r = 250; // Radius of the rings
         let ballRadius = 30; // Radius of each ball
         
-        // Define two overlapping circles
         circles = [
-            new Circle(-r / sqrt2, 0, r+ballRadius, 20, innerR=r-ballRadius), // Left circle
-            new Circle( r / sqrt2, 0, r+ballRadius, 20, innerR=r-ballRadius) // Right circle
+            new Circle(-r / sqrt2, 0, r+ballRadius, 20, innerR=r-ballRadius),
+            new Circle( r / sqrt2, 0, r+ballRadius, 20, innerR=r-ballRadius)
         ];
         
-        // Generate the pieces (balls)
-        const colors = ['red', 'blue', 'green', 'yellow']; // Ball colors
+        const colors = ['red', 'blue', 'green', 'yellow'];
         let svgBalls = colors.map(color => loadSVG(createCirclePath(ballRadius), color));
         genPiece(pieces, svgBalls[0], circles[0], 10, r, -27, 0, 0);
         genPiece(pieces, svgBalls[1], circles[0], 9,  r, 153, 0, 1);
         genPiece(pieces, svgBalls[2], circles[1], 9,  r, -27, 0, 2);
         genPiece(pieces, svgBalls[3], circles[1], 10, r, 153, 0, 3);
     
-        // Scramble function to shuffle balls
         scrambleFunc = generateScrambleFunc([38], pieces);
     
-        // Function to check if a move is valid (a ball belongs to a ring)
         testFunc = (x, y, a, b) => {
             let circleIdx = b < 2 ? 0 : 1;
             let side = (y - circles[circleIdx].y) + (x - circles[circleIdx].x) < 0 ? 1 : 0;
             return circles[circleIdx].containsPoint(x, y) && b % 2 === side;
         };
     }
+    else return undefined;
     
-    // Instead of using global variables, we return a structure with the level data.
-    const levelData = {
+    return {
         circles,
         pieces,
         scrambleFunc,
         testFunc,
         name
     };
-    return levelData;
 }
 
 function initViewBox(pieces, viewbox, mainViewBox=true) {
@@ -502,5 +496,57 @@ function initViewBox(pieces, viewbox, mainViewBox=true) {
         let origin = rotate(p.win_x, p.win_y, p.win_x, p.win_y, p.win_a);
         svgClone.setAttribute('transform', `translate(${origin.x}, ${origin.y}) rotate(${p.win_a})`);
         viewbox.appendChild(svgClone);
+    });
+}
+
+function initMiniViewBoxWithPerm(pieces, viewbox, permDict){
+    viewbox.innerHTML = '';
+    
+    // Create defs and marker inside the viewbox
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '4');
+    marker.setAttribute('refX', '6');
+    marker.setAttribute('refY', '2');
+    marker.setAttribute('orient', 'auto');
+    
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', '0 0, 6 2, 0 4');
+    polygon.setAttribute('fill', 'pink');
+    polygon.setAttribute('stroke', 'none');
+    
+    marker.appendChild(polygon);
+    defs.appendChild(marker);
+    viewbox.appendChild(defs);
+
+    pieces.forEach((p, index) => {
+        const svgClone = p.svg.cloneNode(true);
+        let origin, rot;
+        if (index in permDict) {
+            const targetPiece = pieces[permDict[index]];
+            origin = rotate(targetPiece.win_x, targetPiece.win_y, targetPiece.win_x, targetPiece.win_y, targetPiece.win_a);
+            rot = targetPiece.win_a;
+        } else {
+            origin = rotate(p.win_x, p.win_y, p.win_x, p.win_y, p.win_a);
+            rot = p.win_a;
+        }
+        svgClone.setAttribute('transform', `translate(${origin.x}, ${origin.y}) rotate(${rot})`);
+        viewbox.appendChild(svgClone);
+    });
+
+    Object.keys(permDict).forEach(index => {
+        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        arrow.setAttribute('stroke', 'pink');
+        arrow.setAttribute('stroke-width', '5');
+        arrow.setAttribute('marker-end', 'url(#arrowhead)');
+        
+        arrow.setAttribute('x1', pieces[permDict[index]].win_x);
+        arrow.setAttribute('y1', pieces[permDict[index]].win_y);
+        arrow.setAttribute('x2', pieces[index].win_x);
+        arrow.setAttribute('y2', pieces[index].win_y);
+        
+        viewbox.appendChild(arrow);
     });
 }

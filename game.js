@@ -143,13 +143,6 @@ function onEnd(e) {
             debug('Congratulations!');
             localStorage.setItem(`obx.p${lvId}`, 1);
         }
-        // else{
-        //     lv.pieces.forEach(piece => {
-        //         if (!lv.testFunc(piece.x, piece.y, piece.a, piece.b)) {
-        //             console.log(`Piece at (${piece.x}, ${piece.y}) with angle ${piece.a} did not pass the test.`);
-        //         }
-        //     });
-        // }
     }
     currentPiece = null;
     currentCircle = null;
@@ -206,8 +199,8 @@ function toggleArrows() {
     else tryClearArrows();
 }
 
-// Initialize event listeners (only for index.html)
 function initGame() {
+    debug('');
     const mainViewbox = document.getElementById('main-viewbox');
 
     // Touch events

@@ -1,0 +1,29 @@
+<p>[L,R']2 :</p>
+<svg id="box1" class="mini-viewbox" width="360" height="270" viewBox="-480 -360 960 720">
+</svg>
+
+<p>[L,R']3 :</p>
+<svg id="box2" class="mini-viewbox" width="360" height="270" viewBox="-480 -360 960 720">
+</svg>
+
+<script>
+    const boxes = [
+        document.getElementById('box1'),
+        document.getElementById('box2')
+    ]
+    initMiniViewBoxWithPerm(levelData.pieces, boxes[0], { 25: 27, 27: 26, 26: 25 });
+    initMiniViewBoxWithPerm(levelData.pieces, boxes[1], { 9: 10, 10: 9, 11: 12, 12: 11 });
+    
+    ['U', 'L', 'R'].forEach((text, i) => {
+        const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        textElement.setAttribute("x", levelData.circles[i].x);
+        textElement.setAttribute("y", levelData.circles[i].y);
+        textElement.setAttribute("text-anchor", "middle");
+        textElement.setAttribute("dominant-baseline", "middle");
+        textElement.setAttribute("font-size", "64");
+        textElement.setAttribute("fill", "pink");
+        textElement.setAttribute("style", "user-select: none;");
+        textElement.textContent = text;
+        boxes.forEach(box => box.appendChild(textElement.cloneNode(true)));
+    });
+</script>

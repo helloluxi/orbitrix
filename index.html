@@ -13,14 +13,17 @@
     <div id="menu-container">
       <!-- Level previews will be generated here by script -->
     </div>
+    <footer>
+      &copy;2024-<span id="year"></span> Xi Lu. Released under GPL-3.0 license. View on <a href="https://github.com/helloluxi/orbitrix">Github.</a>
+    </footer>
   </div>
 
   <!-- Game View -->
   <div id="game-view" style="display: none;">
     <div class="game-container">
       <div class="sidebar">
-        <!-- A menu icon to return to the level menu -->
         <div class="menu-icon" onclick="switchToMenu()">☰ Menu</div>
+        <div class="menu-icon" onclick="window.open(`./doc.html?p=${lvId}`)">? Help</div>
         <div>
           <div class="control-panel">
             <h3>Goal</h3>
@@ -42,22 +45,19 @@
     </div>
   </div>
 
-  <footer>
-    &copy;2024-<span id="year"></span> Xi Lu. Released under GPL-3.0 license. View on <a href="https://github.com/helloluxi/orbitrix">Github.</a>
-  </footer>
-
   <script src="levels.js"></script>
   <script src="game.js"></script>
+  <script src="seedrandom.min.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+    const lvIds = [4813, 5639, 3623, 2767, 9547];
 
     // Generate level menu previews
     function generateMenu() {
-      const levelsArr = [4813, 5639, 3623, 2767, 9547];
       const menuContainer = document.getElementById('menu-container');
       menuContainer.innerHTML = '';
       
-      levelsArr.forEach((levelId, index) => {
+      lvIds.forEach((levelId, index) => {
         // Create a menu block for this level
         const menuBlock = document.createElement('div');
         menuBlock.className = 'menu-level';
@@ -89,6 +89,10 @@
       document.getElementById('game-view').style.display = 'block';
       initLevel(levelId);
       initGame();
+      // Update URL with level parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set('p', levelId);
+      window.history.pushState({}, '', url);
     }
     
     // Switch from game view back to menu view
@@ -96,10 +100,28 @@
       document.getElementById('game-view').style.display = 'none';
       document.getElementById('menu-view').style.display = 'block';
       generateMenu();
+      // Remove level parameter from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('p');
+      window.history.pushState({}, '', url);
     }
     
     // Initially display the menu view
     generateMenu();
+
+    // Check for URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlP = urlParams.get('p');
+    const seed = urlParams.get('seed');
+    if (seed) { Math.seedrandom(seed); }
+
+    // Navigate directly to a level if specified
+    if (urlP) {
+      const levelIdNum = parseInt(urlP);
+      if (lvIds.includes(levelIdNum)) {
+        switchToGame(levelIdNum);
+      }
+    }
   </script>
 </body>
 </html>

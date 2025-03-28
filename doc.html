@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .spoiler {
+            cursor: pointer;
+            color: var(--accent-color);
+            text-decoration: none;
+            display: inline-block;
+            margin: 8px 16px;
+            padding: 8px 16px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .spoiler:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .spoiler:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .spoiler-content {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: none;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Comic Neue', cursive;
+        }
+    </style>
+</head>
+<script src="../levels.js"></script>
+<body>
+    <h1>Help</h1>
+    <p>Todo: Knowledge Base for Commutator ([A,B] = A &rarr; B &rarr; A<sup>-1</sup> &rarr; B<sup>-1</sup>)</p>
+    <div id="spoiler-container" style="display: none;">
+        <div style="text-align: center;">
+            <div class="spoiler" data-type="hint" onclick="toggleSpoiler(event)">Show Hint</div>
+        </div>
+        <div id="hint-content" class="spoiler-content"></div>
+        <div style="text-align: center;">
+            <div class="spoiler" data-type="help" onclick="toggleSpoiler(event)">Show Help</div>
+        </div>
+        <div id="help-content" class="spoiler-content"></div>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const pId = parseInt(urlParams.get('p'));
+        let levelData;
+        if (pId && (levelData = loadLevel(pId))) {
+            document.getElementById('spoiler-container').style.display = 'block';
+        }
+
+        function toggleSpoiler(event) {
+            const type = event.target.dataset.type;
+            const contentEl = document.getElementById(`${type}-content`);
+            const spoilerEl = event.target;
+            if (contentEl.dataset.loaded) {
+                const isHidden = contentEl.style.display === 'none';
+                contentEl.style.display = isHidden ? 'block' : 'none';
+                spoilerEl.textContent = `${isHidden ? 'Hide' : 'Show'} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+                return;
+            }
+
+            // First time loading content
+            if (pId && (levelData = loadLevel(pId))) {
+                fetch(`docs/${type=='hint'?'c':'h'}${pId}.html`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('File not found');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        contentEl.innerHTML = html;
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        const scripts = tempDiv.querySelectorAll('script');
+                        scripts.forEach(script => {
+                            const newScript = document.createElement('script');
+                            if (script.src) {
+                                newScript.src = script.src;
+                            } else {
+                                newScript.textContent = script.textContent;
+                            }
+                            document.body.appendChild(newScript);
+                        });
+
+                        contentEl.dataset.loaded = 'true';
+                        contentEl.style.display = 'block';
+                        spoilerEl.textContent = `Hide ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+                    })
+                    .catch(error => {
+                        contentEl.innerHTML = `${type.charAt(0).toUpperCase() + type.slice(1)} is on the way! Pull request welcome!!`;
+                        contentEl.dataset.loaded = 'true';
+                        contentEl.style.display = 'block';
+                        spoilerEl.textContent = `Hide ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+                    });
+            } else {
+                document.getElementById('spoiler-container').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
