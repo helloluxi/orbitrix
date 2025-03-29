@@ -11,16 +11,6 @@ function tryClearArrows() {
     }
 }
 
-function getRelX() {
-    const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
-    return viewboxRect.left + viewboxRect.width / 2;
-}
-
-function getRelY() {
-    const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
-    return viewboxRect.top + viewboxRect.height / 2;
-}
-
 function resetPuzzle() {
     if (isPlayMode){
         lv.scrambleFunc();
@@ -73,21 +63,19 @@ function debug(text) {
 // Touch and mouse event handlers
 function getTouchCoordinates(e) {
     const touch = e.touches ? e.touches[0] : e;
-    const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
-    
-    // Get the touch coordinates relative to the viewport
     let clientX = touch.clientX;
     let clientY = touch.clientY;
     
     // If the touch is outside the viewbox, return null
+    const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
     if (clientX < viewboxRect.left || clientX > viewboxRect.right ||
         clientY < viewboxRect.top || clientY > viewboxRect.bottom) {
         return null;
     }
     
     return {
-        clientX: clientX,
-        clientY: clientY
+        x: clientX - (viewboxRect.left + viewboxRect.width / 2),
+        y: clientY - (viewboxRect.top + viewboxRect.height / 2),
     };
 }
 
@@ -95,22 +83,21 @@ function onStart(e) {
     e.preventDefault();
     const coords = getTouchCoordinates(e);
     if (!coords) return;
-    
     const target = e.target || (e.touches && e.touches[0].target);
     currentPiece = lv.pieces.find(p => p.svg === target.parentNode.parentNode);
     if (currentPiece) {
-        startX = coords.clientX - getRelX();
-        startY = coords.clientY - getRelY();
+        startX = coords.x;
+        startY = coords.y;
     }
     tryClearArrows();
 }
 
+let mx, my;
 function onMove(e) {
     e.preventDefault();
-    const coords = getTouchCoordinates(e);
-    if (!coords) return;
-    
-    let mx = coords.clientX - getRelX(), my = coords.clientY - getRelY();
+    const cd = getTouchCoordinates(e);
+    if (!cd) return;
+    mx = cd.x; my = cd.y;
     
     if (currentPiece && !currentCircle) {
         let minAngle = 999;
@@ -142,12 +129,9 @@ function onMove(e) {
 
 function onEnd(e) {
     e.preventDefault();
-    const coords = getTouchCoordinates(e);
-    if (!coords) return;
-    
-    let mx = coords.clientX - getRelX(), my = coords.clientY - getRelY();
     const testWin = isPlayMode || localStorage.getItem('obx.debug') == 1;
     
+    // If we are in the process of moving a piece
     if (currentCircle) {
         let angle = angleBetween(mx, my, currentCircle.x, currentCircle.y, startX, startY);
         angle = Math.round(angle / (360 / currentCircle.s)) * (360 / currentCircle.s);
