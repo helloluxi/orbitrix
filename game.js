@@ -1,4 +1,3 @@
-
 let lvId, lv;
 let isPlayMode = true;
 let currentPiece = null, currentCircle = null, startX, startY;
@@ -74,15 +73,29 @@ function debug(text) {
 // Touch and mouse event handlers
 function getTouchCoordinates(e) {
     const touch = e.touches ? e.touches[0] : e;
+    const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
+    
+    // Get the touch coordinates relative to the viewport
+    let clientX = touch.clientX;
+    let clientY = touch.clientY;
+    
+    // If the touch is outside the viewbox, return null
+    if (clientX < viewboxRect.left || clientX > viewboxRect.right ||
+        clientY < viewboxRect.top || clientY > viewboxRect.bottom) {
+        return null;
+    }
+    
     return {
-        clientX: touch.clientX,
-        clientY: touch.clientY
+        clientX: clientX,
+        clientY: clientY
     };
 }
 
 function onStart(e) {
     e.preventDefault();
     const coords = getTouchCoordinates(e);
+    if (!coords) return;
+    
     const target = e.target || (e.touches && e.touches[0].target);
     currentPiece = lv.pieces.find(p => p.svg === target.parentNode.parentNode);
     if (currentPiece) {
@@ -95,6 +108,8 @@ function onStart(e) {
 function onMove(e) {
     e.preventDefault();
     const coords = getTouchCoordinates(e);
+    if (!coords) return;
+    
     let mx = coords.clientX - getRelX(), my = coords.clientY - getRelY();
     
     if (currentPiece && !currentCircle) {
@@ -127,7 +142,9 @@ function onMove(e) {
 
 function onEnd(e) {
     e.preventDefault();
-    const coords = e.changedTouches ? e.changedTouches[0] : e;
+    const coords = getTouchCoordinates(e);
+    if (!coords) return;
+    
     let mx = coords.clientX - getRelX(), my = coords.clientY - getRelY();
     const testWin = isPlayMode || localStorage.getItem('obx.debug') == 1;
     

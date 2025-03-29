@@ -497,6 +497,21 @@ function initViewBox(pieces, viewbox, mainViewBox=true) {
         svgClone.setAttribute('transform', `translate(${origin.x}, ${origin.y}) rotate(${p.win_a})`);
         viewbox.appendChild(svgClone);
     });
+
+    if (localStorage.getItem("obx.debug") === '1' && !mainViewBox){
+        pieces.forEach((p, idx) => {
+            const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            textElement.setAttribute("x", p.win_x);
+            textElement.setAttribute("y", p.win_y);
+            textElement.setAttribute("text-anchor", "middle");
+            textElement.setAttribute("dominant-baseline", "middle");
+            textElement.setAttribute("font-size", "36");
+            textElement.setAttribute("fill", "pink");
+            textElement.setAttribute("style", "user-select: none;");
+            textElement.textContent = idx;
+            viewbox.appendChild(textElement);
+        });
+    }
 }
 
 function initMiniViewBoxWithPerm(pieces, viewbox, permDict){
