@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
 :root {
     --bg-color: #1a1a1a;
     --text-color: #ffffff;
@@ -12,18 +14,18 @@
 body {
     margin: 0;
     padding: 10px;
-    font-family: 'Segoe UI', system-ui, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 16px;
     touch-action: none;
     overflow-x: hidden;
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
     touch-action: pan-x pan-y;
+    font-family: 'Comic Neue', cursive;
+    font-weight: bold;
+    font-size: 16px;
 }
 
 #menu-view {
@@ -190,6 +192,8 @@ button {
     transition: background-color 0.2s;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    font-family: 'Comic Neue', cursive;
+    font-weight: bold;
 }
 
 button:hover {
