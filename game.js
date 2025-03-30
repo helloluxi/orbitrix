@@ -63,20 +63,19 @@ function debug(text) {
 // Touch and mouse event handlers
 function getTouchCoordinates(e) {
     const touch = e.touches ? e.touches[0] : e;
-    let clientX = touch.clientX;
-    let clientY = touch.clientY;
-    
-    // If the touch is outside the viewbox, return null
-    const viewboxRect = document.getElementById('main-viewbox').getBoundingClientRect();
-    if (clientX < viewboxRect.left || clientX > viewboxRect.right ||
-        clientY < viewboxRect.top || clientY > viewboxRect.bottom) {
+    const clientX = touch.clientX;
+    const clientY = touch.clientY;
+    const svg = document.getElementById('main-viewbox');
+    const rect = svg.getBoundingClientRect();
+    if (clientX < rect.left || clientX > rect.right ||
+        clientY < rect.top || clientY > rect.bottom) {
         return null;
     }
-    
-    return {
-        x: clientX - (viewboxRect.left + viewboxRect.width / 2),
-        y: clientY - (viewboxRect.top + viewboxRect.height / 2),
-    };
+    const viewBoxValues = svg.getAttribute('viewBox').split(' ').map(Number);
+    const [minX, minY, viewBoxWidth, viewBoxHeight] = viewBoxValues;
+    const x = ((clientX - rect.left) / rect.width) * viewBoxWidth + minX;
+    const y = ((clientY - rect.top) / rect.height) * viewBoxHeight + minY;
+    return { x, y };
 }
 
 function onStart(e) {
